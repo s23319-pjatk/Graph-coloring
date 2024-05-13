@@ -6,8 +6,8 @@
 //
 
 #include <iostream>
-#include <list>
-#include <iterator>
+#include <queue>
+#include <sstream>
 #include <algorithm>
 #include <vector>
 
@@ -16,17 +16,17 @@ using namespace std;
 
 class Graph {
     int V; //liczba wierzchołków
-    list<int> *adj; // lista sąsiedztwa
+    vector<vector<int> > adj; // lista sąsiedztwa
     
 public:
     Graph(int V); //Konstruktor
     void addEdge(int v, int w); //dodawanie krawędzi do grafu
-    void greedyColoring(); // algorytm kolorowania grafu
+    vector<int> greedyColoring(); // algorytm kolorowania grafu
 };
 
 Graph::Graph(int V) {
     this ->V = V;
-    adj = new list<int>[V];
+    adj.resize(V);
 }
 
 void Graph::addEdge(int v, int w) {
@@ -34,52 +34,66 @@ void Graph::addEdge(int v, int w) {
     adj[w].push_back(v); // graf nieskierowany, więc dodajemy krawędź w drugą stronę
 }
 
-void Graph::greedyColoring() {
+vector<int> Graph::greedyColoring() {
     vector<int> result(V, -1); // Tablica wynikowa, w której przechowujemy kolory przypisane do wierzchołków
-    result[0] = 0; // Przypisujemy pierwszy wierzchołek koloru 0
-    // Tablica do śledzenia użytych kolorów przez sąsiadów
+    vector<bool> available(V, false); // Tablica do śledzenia użytych kolorów przez sąsiadów
     
-    vector<bool> available(V, false);
+    result[0] = 0; // Przypisujemy pierwszy wierzchołek koloru 0
     
     // Przypisanie kolorów pozostałym V-1 wierzchołkom
     for(int u = 1; u < V; u++) {
         // Wybieramy kolor dla wierzchołka u, których nie jest używany przez sąsiadów
-        for (auto it = adj[u].begin(); it != adj[u].end(); ++it)
-            if (result[*it] != -1)
-                available[result[*it]] = true;
+        for (int i : adj[u])
+            if (result[i] != -1)
+                available[result[i]] = true;
         
         int cr;
-        for (cr =0; cr< V; cr++)
+        for (cr = 0; cr < V; cr++)
             if (available[cr] == false)
                 break;
         
         result[u] = cr; // Przypisujemy wybrany kolor
         
         // Resetujemy tablicę avialable dla następnych wierzchołków
-        for (auto it = adj[u].begin(); it != adj[u].end(); ++it)
-            if (result[*it] != -1)
-                available[result[*it]] = false;
+        for (int i : adj[u])
+            if (result[i] != -1)
+                available[result[i]] = false;
     }
-    
+    return result;
     // Wyświetlenie wyników
-    cout << "Kolorowanie grafu:\n";
-    for (int u = 0; u < V; u++)
-        cout << "Wierzcholek " << u << " ---> Kolor " << result[u] << "\n";
 }
 
-int main() {
-    int V = 6;
-    Graph g(V);
-    g.addEdge(0, 1);
-    g.addEdge(0, 2);
-    g.addEdge(1, 2);
-    g.addEdge(1, 3);
-    g.addEdge(2, 3);
-    g.addEdge(3, 4);
-    g.addEdge(<#int v#>, <#int w#>)
-    cout << "Wyniki kolorowania grafu:\n";
+int main(int argc, char* argv[]) {
+    if (argc < 2) {
+        cout << "Użycie: " << argv[0] << " liczba_wiercholkow krawedzie" << endl;
+        return 1;
+    }
     
-    g.greedyColoring();
+    int V = atoi(argv[1]);
+    if (V <= 0) {
+        cout << "Liczba wierzcholkow musi byc dodatnia." << endl;
+        return 1;
+    }
+    
+    Graph g(V);
+    
+    if (argc != V + 2) {
+        cout << "Podano nieprawidlowa liczbe krawedzi." << endl;
+        return 1;
+    }
+    
+    for (int i = 2; i < argc; ++i) {
+        stringstream ss(argv[i]);
+        int u, v;
+        ss >> u >> v;
+        g.addEdge(u, v);
+    }
+    
+    vector<int> colors = g.greedyColoring();
+    
+    cout << "Kolorowanie grafu: \n";
+    for(int i = 0; i < V; ++i)
+        cout << "Wierzcholek " << i << " ---> Kolor " << colors[i] << "\n";
     
     return 0;
 }
